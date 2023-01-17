@@ -14,6 +14,7 @@ module TemperatureAnomaly(
 
 
 //First, let's set a Value for the bit width of the temperature signal
+//https://tinyurl.com/af-setvalue
 /*[$TemperatureWidth 16]*/
 
 //****************************************************
@@ -26,18 +27,21 @@ module TemperatureAnomaly(
 //So let's get the rising edge of scl
 //Here, we don't specify the source, but we instead rely on the
 //notation of the rising prefix in the wire name
+//https://tinyurl.com/af-risingedge
 /*[RisingEdge]*/
 wire risingScl;
 
 //Now, let's shift the serial data into a parallel reg, the
 //SerialShifter automation will store --width bits from the
 //--data source everytime the --risingAccept signal rises
+//https://tinyurl.com/af-serialshifter
 /*[SerialShifter --width $TemperatureWidth --risingAccept scl --data sda]*/
 reg [/*[$TemperatureWidth]*/ - 1:0] receivedTemperature;
 
 //We need to know when a full value has been received. Let's
 //count the number of scl rises to know when we have received a
 //total of $TemperatureWidth scl rises
+//https://tinyurl.com/af-counter
 /*[Counter --count $TemperatureWidth --event $scl.rising]*/
 reg [15:0] sclCounter;
 
@@ -45,6 +49,7 @@ reg [15:0] sclCounter;
 //to discern, we are trying to discern when we've received a full
 //temperature reading. Let's make a Value that copies $sclCounter.done
 //and gives it a better name
+//https://tinyurl.com/af-setvalue
 /*[$temperatureReceived $sclCounter.done]*/
 
 
@@ -55,15 +60,20 @@ reg [15:0] sclCounter;
 //1) Now, we need to keep the previous n accepted temperature values so we can
 //   calculate the average. Lets create a Value for the number of temperatures to track.
 //   Let's start by using 16 for the Value
+//https://tinyurl.com/af-setvalue
 /*[$TemperaturesToTrack 16]*/
 
 //2) Next, lets create the registers to hold the last n temperatures
 //   Let's use the following reg, temperatureHistory, except we need $TemperaturesToTrack
 //   of them. We recommend using the Expand automation
+//https://tinyurl.com/af-expand
 /*[Expand --count $TemperaturesToTrack]*/ reg [15:0] temperatureHistory;
 
 //3) Then, similar to the SerialShifter, we need to shift new temperatures values through
-//   the regs we made. We recommend using the VariableShifter automation
+//   the regs we made. We recommend using the VariableShifter automation. You'll likely
+//   want to set the dataBase to temperatureHistory, incoming to receivedTemperature, 
+//   coutn to the Value for temperatures to track, and risingAccept to acceptTemperature
+//https://tinyurl.com/af-variableshifter
 /*[VariableShifter --dataBase temperatureHistory --incoming receivedTemperature --count $TemperaturesToTrack --risingAccept acceptTemperature]*/
 
 
@@ -78,16 +88,21 @@ reg [15:0] sclCounter;
 //4) Lets sum up all of the temperatureHistory regs. We recommend using the Sum
 //   automation. Please note, the Sum automation is a non optimal way to add these
 //   regs, due to the amount, but it's easy to use for this tutorial
+//https://tinyurl.com/af-sum-automation
 /*[Sum --base temperatureHistory --count $TemperaturesToTrack]*/
 wire [31:0] temperatureSum;
 
 //Now, let's right shift the sum to divide it and get the average
 parameter rightShiftsForAverageDividend = $clog2(/*[$TemperaturesToTrack]*/);
 reg [15:0] averageTemperature;
+//https://tinyurl.com/af-always
 /*[always averageTemperature]*/ begin
+    //https://tinyurl.com/af-reset
     /*[Reset]*/
+        //https://tinyurl.com/af-nonblocking
         /*[<= 0]*/
     else
+        //https://tinyurl.com/af-nonblocking
         /*[<= temperatureSum >> rightShiftsForAverageDividend]*/
 end
 
@@ -110,14 +125,18 @@ assign eigthOfAverageTemperature = averageTemperature >> 3;
 //   the upperTemperatureBound reg.
 reg [15:0] upperTemperatureBound;
 //5a) Use an always automation
+//https://tinyurl.com/af-always
 /*[always upperTemperatureBound]*/ begin
     //5b) A Reset automation
+    //    https://tinyurl.com/af-reset
     /*[Reset]*/
         //5c) Non blocking automation to set upperTemperatureBound to 0
+        //    https://tinyurl.com/af-nonblocking
         /*[<= 0]*/
     else
         //5d) Another non blocking automation to set
         //    upperTemperatureBound to averageTemperature + eigthOfAverageTemperature
+        //    https://tinyurl.com/af-nonblocking
         /*[<= averageTemperature + eigthOfAverageTemperature]*/
 end
 
@@ -125,10 +144,14 @@ end
 //   as the upperTemperatureBound, but you want to subtract eigthOfAverageTemperature.
 //   Also, you will need to create the always automation/block without guidance here.
 reg [15:0] lowerTemperatureBound;
+//https://tinyurl.com/af-always
 /*[always lowerTemperatureBound]*/ begin
+    //https://tinyurl.com/af-reset
     /*[Reset]*/
+        //https://tinyurl.com/af-nonblocking
         /*[<= 0]*/
     else
+        //https://tinyurl.com/af-nonblocking
         /*[<= averageTemperature - eigthOfAverageTemperature]*/
 end
 
@@ -141,6 +164,7 @@ end
 //   You will want it to have no maximum, and the --event should be that
 //   of when a new temperature reading is received. We will use the
 //   counter to accept any temperature until the temperatureHistory is full.
+//   https://tinyurl.com/af-counter
 /*[Counter --event $temperatureReceived --noMax]*/
 reg[7:0] temperaturesReceived;
 
@@ -170,27 +194,37 @@ assign acceptTemperature =
 //****************************************************
 //8) Finally, we want to set the outputs. Use non blocking automations to set the
 //   outputs as stated in the next two always automations/blocks.
+//https://tinyurl.com/af-always
 /*[always temperatureReady]*/ begin
+    //https://tinyurl.com/af-reset
     /*[Reset]*/
         //Set to 0
+        //https://tinyurl.com/af-nonblocking
         /*[<= 0]*/
     else if(acceptTemperature)
         //Set to 1
+        //https://tinyurl.com/af-nonblocking
         /*[<= 1]*/
     else
         //Set to 0
+        //https://tinyurl.com/af-nonblocking
         /*[<= 0]*/
 end
 
+//https://tinyurl.com/af-always
 /*[always temperature]*/ begin
+    //https://tinyurl.com/af-reset
     /*[Reset]*/
         //Set to 0
+        //https://tinyurl.com/af-nonblocking
         /*[<= 0]*/
     else if(acceptTemperature)
         //Set to receivedTemperature
+        //https://tinyurl.com/af-nonblocking
         /*[<= receivedTemperature]*/
     else
         //Hold value
+        //https://tinyurl.com/af-nonblocking
         /*[<=]*/
 end
 endmodule

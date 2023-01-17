@@ -3,6 +3,7 @@ module TemperatureAnomalyTest;
 
 //9) Instantiate the TemperatureAnomaly module to test using the
 //   TestModule automation.
+//   https://tinyurl.com/af-testmodule
 /*[TestModule --module TemperatureAnomaly]*/
 
 
