@@ -74,7 +74,7 @@ reg [15:0] sclCounter;
 //   want to set the dataBase to temperatureHistory, incoming to receivedTemperature, 
 //   coutn to the Value for temperatures to track, and risingAccept to acceptTemperature
 //https://tinyurl.com/af-variableshifter
-/*[VariableShifter --dataBase temperatureHistory --incoming receivedTemperature --count $TemperaturesToTrack --risingAccept acceptTemperature]*/
+/*[VariableShifter --base temperatureHistory --incoming receivedTemperature --count $TemperaturesToTrack --risingAccept acceptTemperature]*/
 
 
 
